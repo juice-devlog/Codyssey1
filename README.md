@@ -118,7 +118,7 @@ git version 2.53.0
 | 상태 | 항목 | 명령어 |
 |------|------|--------|
 | [x] | 포트 매핑 실행 | `docker run -p` |
-| [ ] | 브라우저 접속 성공 화면 첨부 | - |
+| [x] | 브라우저 접속 성공 화면 첨부 | - |
 
 ### 바인드 마운트
 | 상태 | 항목 | 명령어 |
@@ -135,9 +135,6 @@ git version 2.53.0
 
 ### Git / GitHub
 | 상태 | 항목 | 명령어 |
-|------|------|--------|
-| [ ] | Git 사용자 정보 설정 | `git config --global user.name` |
-| [ ] | 기본 브랜치 설정 | `git config --global init.defaultBranch` |
 | [x] | git config --list 결과 기록 | `git config --list` |
 | [x] | GitHub 저장소 연동 확인 | `git remote -v` |
 
