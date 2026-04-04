@@ -15,7 +15,6 @@
 12. [Git 설정 및 GitHub 연동](#12-git-설정-및-github-연동)
 13. [트러블슈팅](#13-트러블슈팅)
 
-
 ## 1. 프로젝트 개요
 
 개발 환경을 직접 세팅하고 운영하는 경험을 통해,
@@ -149,7 +148,7 @@ git version 2.53.0
 | [x] | 원인 분석 및 해결 방법 기록 | - |
 | [x] | 재발 방지 포인트 정리 | - |
 
-## 4. 터미널 조작 로그
+## 4. 터미널 기본 조작
 
 ### 현재 위치 확인
 ```bash
@@ -206,13 +205,14 @@ hello_copy.txt  hello.txt
 ```bash
 # 파일 이동
 $ mv hello_copy.txt ../hello_copy.txt
+$ cd ..
 $ ls
-hello_renamed.txt       hello.txt
+hello_copy.txt  README.md       sub
 
 # 파일 이름변경
 $ mv hello_copy.txt hello_renamed.txt
 $ ls
-hello_renamed.txt       hello.txt
+hello_renamed.txt       README.md               sub
 ```
 
 ### 파일/디렉토리 삭제
@@ -220,15 +220,17 @@ hello_renamed.txt       hello.txt
 # 파일 삭제
 $ rm hello_renamed.txt
 $ ls
-hello.txt
+README.md       sub
 
 # 디렉토리 삭제
 $ rm -r sub # 파일이 들어있는 디렉토리 삭제
 $ rmdir sub # 빈 디렉토리인 경우만 삭제
+$ ls
+README.md
 ```
 
 
-## 5. 권한 실습
+## 5. 파일 권한 실습
 
 ### 권한 표기 읽는 법
 | 문자 | 의미 (8진수) |
@@ -395,23 +397,56 @@ CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT   MEM %     NET I/O   BLOCK
 ### ubuntu 컨테이너 실행 및 내부 진입
 ```bash
 $ docker run -it --name ubuntu-test ubuntu /bin/bash
+Unable to find image 'ubuntu:latest' locally
+latest: Pulling from library/ubuntu
+817807f3c64e: Pull complete 
+Digest: sha256:186072bba1b2f436cbb91ef2567abca677337cfc786c86e107d25b7072feef0c
+Status: Downloaded newer image for ubuntu:latest
+root@57952c7bbd43:/# ls
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@57952c7bbd43:/# pwd
+/
+root@57952c7bbd43:/# # Ctrl+D
+exit
 ```
+| 옵션 | 의미 |
+|------|------|
+| `-i` | 사용자가 직접 키보드로 입력 가능 |
+| `-t` | 화면에 터미널 띄우기 |
+| `--name ubuntu-test` | 컨테이너 이름을 `ubuntu-test`로 지정 |
+| `ubuntu` | 사용할 이미지를 `ubuntu`로 지정 |
+| `/bin/bash` | 실행할 시작 프로그램 |
 
 ### attach vs exec 차이 정리
 
-| 방식 | 명령 | 특징 |
-|------|------|------|
-| `attach` | `docker attach <container>` | 컨테이너의 메인 프로세스(PID 1)에 직접 붙음. exit 시 컨테이너가 종료됨 |
-| `exec` | `docker exec -it <container> bash` | 컨테이너 안에서 새 프로세스를 실행. exit해도 컨테이너는 계속 실행됨 |
+| 방식 | 명령 | 개념 | 특징 |
+|------|------|------|------|
+| `attach` | `docker attach <container>` | 실행 중인 프로세스에 접속 | 컨테이너의 메인 프로세스(PID 1)에 직접 붙음. exit(^C) 시 컨테이너가 종료됨 |
+| `exec` | `docker exec -it <container> bash` | 새 프로세스를 추가로 실행 | 컨테이너 안에서 새 프로세스를 실행. exit해도 컨테이너는 그대로 살아있음 |
+
+실행 중인 컨테이너에 접속 시 `attach`는 잘못하면 컨테이너 종료 위험이 있기 때문에 실무에서는 `exec`를 쓰는 것이 더 안전하다.
+
+### attach 예제
 
 ```bash
-# attach 예제 보기 curl http://localhost
-192.168.215.1 - - [01/Apr/2026:14:57:09 +0000] "GET / HTTP/1.1" 200 896 "-" "curl/8.5.0" "-"
-
-# exec 방식 (권장): 컨테이너를 살려두면서 접속
 $ docker run -d --name nginx-running nginx:alpine
+$ docker attach nginx-running
+^C2026/04/04 08:31:40 [notice] 1#1: signal 2 (SIGINT) received, exiting
+2026/04/04 08:31:40 [notice] 23#23: exiting
+...
+$ docker ps # 컨테이너 종료됨
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
+
+### exec 예제 (권장)
+```bash
+$ docker start nginx-running
+nginx-running
 $ docker exec -it nginx-running sh
-$ docker ps # 컨테이너가 여전히 Running 상태
+/ # exit
+$ docker ps # 컨테이너가 여전히 실행 중
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS              PORTS     NAMES
+a12cda8add99   nginx:alpine   "/docker-entrypoint.…"   7 minutes ago   Up About a minute   80/tcp    nginx-running
 ```
 
 ## 8. 커스텀 이미지 제작 (Dockerfile)
@@ -427,39 +462,44 @@ COPY index.html /usr/share/nginx/html/index.html
 ### 빌드 시점 페이지 내용
 
 ```html
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codyssey Docker Demo</title>
-</head>
-<body>
-  <h1>Codyssey Docker Demo</h1>
-  <p>README 실습용 기본 페이지입니다.</p>
-</body>
+<meta charset="UTF-8">
+<title>♥ CODYSSEY</title>
+<style>
+...
 </html>
 ```
 
 ### 이미지 빌드
 
 ```bash
-$ docker build -t codyssey-nginx:local .
-#0 building with "orbstack" instance using docker driver
-#1 [internal] load build definition from Dockerfile
-#2 [internal] load metadata for docker.io/library/nginx:alpine
-#6 [2/2] COPY index.html /usr/share/nginx/html/index.html
-#7 naming to docker.io/library/codyssey-nginx:local done
+$ docker build -t codyssey-heart:local .
+[+] Building 0.5s (7/7) FINISHED                                                       docker:orbstack
+ => [internal] load build definition from Dockerfile                                              0.1s
+ => => transferring dockerfile: 111B                                                              0.0s
+ => [internal] load metadata for docker.io/library/nginx:alpine                                   0.0s
+ => [internal] load .dockerignore                                                                 0.0s
+ => => transferring context: 2B                                                                   0.0s
+ => [internal] load build context                                                                 0.1s
+ => => transferring context: 59B                                                                  0.0s
+ => [1/2] FROM docker.io/library/nginx:alpine                                                     0.0s
+ => CACHED [2/2] COPY ./app/index.html /usr/share/nginx/html/index.html                           0.0s
+ => exporting to image                                                                            0.1s
+ => => exporting layers                                                                           0.0s
+ => => writing image sha256:7be5a76f5ce4517678ca60e17c69a22659a8ff3454e423518875c9f893e110ba      0.0s
+ => => naming to docker.io/library/codyssey-heart:local
 ```
 
-### 이미지 생성 확인
+### 이미지 확인
 
 ```bash
 $ docker images
-REPOSITORY    TAG       IMAGE ID       CREATED       SIZE
-codyssey-nginx local    d7858de50636   ...           62.2MB
-nginx         alpine    d5030d429039   9 days ago    62.2MB
-hello-world   latest    e2ac70e7319a   10 days ago   10.1kB
+REPOSITORY       TAG       IMAGE ID       CREATED         SIZE
+codyssey-heart   local     7be5a76f5ce4   2 minutes ago   62.2MB
+nginx            alpine    d5030d429039   10 days ago     62.2MB
+ubuntu           latest    f794f40ddfff   5 weeks ago     78.1MB
 ```
 
 ## 9. 포트 매핑 및 접속 증거
@@ -467,75 +507,47 @@ hello-world   latest    e2ac70e7319a   10 days ago   10.1kB
 ### 컨테이너 실행
 
 ```bash
-$ docker run -d --name codyssey-web -p 8080:80 codyssey-nginx:local
-b9ce0659dae9ec394264134309b1a9609e37822d62321e66f95fa80685896f55
+# -p <호스트 포트>:<컨테이너 포트>
+$ docker run -d --name codyssey-web -p 8080:80 codyssey-heart:local
+816081efea20c2bd43e5dac9749278ccd313472af66cec177e25759e45669605
 ```
 
 ### 포트 매핑 확인
 
 ```bash
 $ docker ps
-CONTAINER ID   IMAGE                  COMMAND                  CREATED          STATUS          PORTS                                     NAMES
-b9ce0659dae9   codyssey-nginx:local   "/docker-entrypoint.…"   23 seconds ago   Up 22 seconds   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   codyssey-web
+CONTAINER ID   IMAGE                  COMMAND                  CREATED         STATUS         PORTS                                     NAMES
+816081efea20   codyssey-heart:local   "/docker-entrypoint.…"   3 minutes ago   Up 3 minutes   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   codyssey-web
 ```
 
-### 컨테이너 내부 페이지 확인
+브라우저에서 80번 포트에 맵핑한 정적 페이지가 정상 접속됨을 확인했다.
 
-```bash
-$ docker exec codyssey-web cat /usr/share/nginx/html/index.html
-<!DOCTYPE html>
-<html lang="ko">
-...
-  <h1>Codyssey Docker Demo</h1>
-  <p>README 실습용 기본 페이지입니다.</p>
-</html>
-```
 
-브라우저 대신 컨테이너 내부 파일을 직접 확인해, 80번 포트로 서비스할 정적 페이지가 정상 배포되었음을 검증했다.
+![화면 스크린샷](./docs/screen.png)
 
 ## 10. 바인드 마운트
 
 ### 바인드 마운트 실행
 
 ```bash
-$ docker run -d --name codyssey-bind -p 8081:80 -v /Users/pwndud04218647/Documents/codyssey1:/usr/share/nginx/html:ro nginx:alpine
-092e851b6de6a256ff526d182f186d9ad85d36bce49c2fed389af1920717d94a
+$ docker run -d --name codyssey-bind-mount -p 8081:80 \
+  -v /Users/pwndud04218647/Documents/codyssey1/app:/usr/share/nginx/html \
+  nginx:alpine
+5bd104a0324359f56d557812c8b71c4224ec8d3858cc407eda76fe880142a25c
 ```
 
-### 마운트된 파일 초기 상태 확인
+### 마운트된 폴더에 파일 추가
 
 ```bash
-$ docker exec codyssey-bind cat /usr/share/nginx/html/index.html
-<!DOCTYPE html>
-<html lang="ko">
-...
-  <p>README 실습용 기본 페이지입니다.</p>
-</html>
+$ echo '<h1>Bind Mount Test - Changed!</h1>' > app/test.html
 ```
 
 ### 호스트 파일 수정 후 즉시 반영 확인
 
 ```bash
-$ docker exec codyssey-bind cat /usr/share/nginx/html/index.html
-<!DOCTYPE html>
-<html lang="ko">
-...
-  <p>Bind mount changed this page without rebuilding the image.</p>
-</html>
+$ curl http://localhost:8081/test.html
+<h1>Bind Mount Test - Changed!</h1>
 ```
-
-### 비교 확인
-
-```bash
-$ docker exec codyssey-web cat /usr/share/nginx/html/index.html
-<!DOCTYPE html>
-<html lang="ko">
-...
-  <p>README 실습용 기본 페이지입니다.</p>
-</html>
-```
-
-`codyssey-bind`는 호스트 파일 수정이 즉시 반영되었고, 빌드된 이미지 기반의 `codyssey-web`은 기존 내용을 유지했다. 이를 통해 바인드 마운트가 이미지 재빌드 없이 개발 중 파일 변경을 반영함을 확인했다.
 
 ## 11. Docker 볼륨 영속성
 
@@ -546,37 +558,58 @@ $ docker volume create codyssey-data
 codyssey-data
 ```
 
+### 볼륨 확인
+```bash
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     codyssey-data
+```
+
+### 볼륨을 연결한 컨테이너 실행 및 데이터 저장
+```bash
+$ docker run -d --name codyssey-volume \
+  -v codyssey-data:/data \
+  ubuntu \
+  bash -c "echo 'Docker 볼륨 영속성 테스트' > /data/persistent.txt && sleep 3600"
+44d4259f344bd6642ccfc13539d2b195a3eda871283297bb5feb57341d7cb748
+```
+
+### 컨테이너 삭제
+```bash
+$ docker stop codyssey-volume && docker rm codyssey-volume
+codyssey-volume
+codyssey-volume
+```
+
+### 컨테이너 삭제 확인
+```bash
+$ docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
+
+### 새 컨테이너 데이터 유지 확인
+```bash
+$ docker run --rm -v  codyssey-data:/data ubuntu cat /data/persistent.txt
+Docker 볼륨 영속성 테스트
+↑ 컨테이너를 삭제했지만 데이터가 그대로 남아있음
+```
+
 ### 볼륨 상세 확인
 
 ```bash
 $ docker volume inspect codyssey-data
 [
-  {
-    "CreatedAt": "2026-04-03T22:35:21+09:00",
-    "Driver": "local",
-    "Mountpoint": "/var/lib/docker/volumes/codyssey-data/_data",
-    "Name": "codyssey-data",
-    "Scope": "local"
-  }
+    {
+        "CreatedAt": "2026-04-04T21:18:35+09:00",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/codyssey-data/_data",
+        "Name": "codyssey-data",
+        "Options": null,
+        "Scope": "local"
+    }
 ]
 ```
-
-### 데이터 저장
-
-```bash
-$ docker run --rm -v codyssey-data:/data alpine sh -c 'echo persistent-data > /data/hello.txt'
-latest: Pulling from library/alpine
-Status: Downloaded newer image for alpine:latest
-```
-
-### 컨테이너 재실행 후 데이터 유지 확인
-
-```bash
-$ docker run --rm -v codyssey-data:/data alpine cat /data/hello.txt
-persistent-data
-```
-
-임시 컨테이너가 종료된 뒤에도 동일 볼륨을 다시 마운트했을 때 파일이 유지되어, 데이터가 컨테이너 수명과 분리되어 저장됨을 확인했다.
 
 ## 12. Git 설정 및 GitHub 연동
 
@@ -611,6 +644,12 @@ branch.main.vscode-merge-base=origin/main
 $ git remote -v
 origin  https://github.com/juice-devlog/Codyssey1.git (fetch)
 origin  https://github.com/juice-devlog/Codyssey1.git (push)
+
+$ git config --global user.name
+juice-devlog
+
+$ git config --global user.email
+juicep0421@gmail.com
 ```
 
 ### 미설정 항목 확인
@@ -623,7 +662,6 @@ $ git config --global init.defaultBranch
 # 출력 없음
 ```
 
-현재 저장소는 GitHub 원격 저장소와 연결되어 있고 기본 작업 브랜치는 `main`이다. 다만 전역 Git 사용자 정보와 전역 기본 브랜치 설정은 이 환경에서 아직 지정되어 있지 않아, 이후 별도로 설정이 필요하다.
 
 ## 13. 트러블슈팅
 
