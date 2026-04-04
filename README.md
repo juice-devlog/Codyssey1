@@ -652,15 +652,11 @@ $ git config --global user.email
 juicep0421@gmail.com
 ```
 
-### 미설정 항목 확인
+### Github, Git 연동 사진
+- 클라우드 Github은 git과 연동됨을 다음과 같이 확인할 수 있다.
 
-```bash
-$ git config --global user.name
-# 출력 없음
+![github and git 연동 확인](./docs/git.png)
 
-$ git config --global init.defaultBranch
-# 출력 없음
-```
 
 
 ## 13. 트러블슈팅
