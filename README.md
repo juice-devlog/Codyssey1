@@ -17,22 +17,21 @@
 
 ## 1. 프로젝트 개요
 
-개발 환경을 직접 세팅하고 운영하는 경험을 통해,
-터미널 · Docker · Git이라는 핵심 도구의 사용법과 설계 원칙을 익힌다.
+개발 환경을 세팅하고 운영하는 경험을 통해 터미널, Docker, Git이라는 핵심 도구의 사용법을 학습한다.
 
 ### 미션 목표
 
-- 터미널(CLI)로 작업 디렉토리와 파일 권한을 직접 다룬다
-- Docker를 설치·점검하고, 컨테이너를 실행·관리한다
-- Dockerfile로 커스텀 이미지를 빌드하고 웹 서버를 컨테이너화한다
-- 포트 매핑 · 바인드 마운트 · 볼륨으로 연결과 데이터 영속성을 검증한다
-- Git 설정과 GitHub 연동으로 버전 관리 기반을 완성한다
+- 터미널로 작업 디렉토리와 파일 권한을 직접 다룬다.
+- Docker를 설치·점검하고, 컨테이너를 실행·관리한다.
+- Dockerfile로 커스텀 이미지를 빌드하고 컨테이너를 실행한다.
+- 포트 매핑, 바인드 마운트, 볼륨으로 연결과 데이터 영속성을 검증한다.
+- Git 설정과 GitHub 연동으로 버전 관리 기반을 완성한다.
 
 ### 학습 포인트
 
 | 항목 | 학습 포인트 |
 |------|-----------|
-| Linux CLI | 경로, 파일 조작, 권한(r/w/x) |
+| 터미널 | 경로, 파일 조작, 권한(r/w/x) |
 | Docker | 이미지/컨테이너 분리, 포트·스토리지 연결 |
 | Git / GitHub | 로컬 버전관리 vs 원격 협업 플랫폼의 차이 |
 
@@ -361,7 +360,7 @@ CONTAINER ID   IMAGE         COMMAND    CREATED          STATUS                 
 
 ### 로그 확인
 ```bash
-$ docker logs test
+$ docker logs test # 컨테이너의 출력 기록을 보여줌
 
 Hello from Docker!
 This message shows that your installation appears to be working correctly.
@@ -387,7 +386,7 @@ For more examples and ideas, visit:
 
 ### 리소스 확인
 ```bash
-$ docker stats --no-stream
+$ docker stats --no-stream # 컨테이너의 실시간 리소스 사용량을 보여줌
 CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT   MEM %     NET I/O   BLOCK I/O   PIDS
 ```
 
@@ -418,7 +417,7 @@ exit
 
 | 방식 | 명령 | 개념 | 특징 |
 |------|------|------|------|
-| `attach` | `docker attach <container>` | 실행 중인 프로세스에 접속 | 컨테이너의 메인 프로세스(PID 1)에 직접 붙음. exit(^C) 시 컨테이너가 종료됨 |
+| `attach` | `docker attach <container>` | 실행 중인 프로세스에 접속 | 컨테이너의 메인 프로세스에 직접 붙음. exit(^C) 시 컨테이너가 종료됨 |
 | `exec` | `docker exec -it <container> bash` | 새 프로세스를 추가로 실행 | 컨테이너 안에서 새 프로세스를 실행. exit해도 컨테이너는 그대로 살아있음 |
 
 실행 중인 컨테이너에 접속 시 `attach`는 잘못하면 컨테이너 종료 위험이 있기 때문에 실무에서는 `exec`를 쓰는 것이 더 안전하다.
@@ -434,13 +433,18 @@ $ docker attach nginx-running
 $ docker ps # 컨테이너 종료됨
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 ```
+| 옵션 | 의미 | 특징 |
+|------|------|------|
+| `-d` | 백그라운드 실행 | 컨테이너 ID만 출력됨. 터미널을 종료해도 컨테이너는 계속 동작 |
 
 ### exec 예제 (권장)
 ```bash
 $ docker start nginx-running
 nginx-running
+
 $ docker exec -it nginx-running sh
 / # exit
+
 $ docker ps # 컨테이너가 여전히 실행 중
 CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS              PORTS     NAMES
 a12cda8add99   nginx:alpine   "/docker-entrypoint.…"   7 minutes ago   Up About a minute   80/tcp    nginx-running
@@ -488,6 +492,9 @@ $ docker build -t codyssey-heart:local .
  => => writing image sha256:7be5a76f5ce4517678ca60e17c69a22659a8ff3454e423518875c9f893e110ba      0.0s
  => => naming to docker.io/library/codyssey-heart:local
 ```
+| 옵션 | 의미 |
+|------|------|
+| `-t` | 태그, 이미지 이름 붙이기 |
 
 ### 이미지 확인
 
@@ -564,17 +571,25 @@ local     codyssey-data
 
 ### 볼륨을 연결한 컨테이너 실행 및 데이터 저장
 ```bash
-$ docker run -d --name codyssey-volume \
-  -v codyssey-data:/data \
-  ubuntu \
-  bash -c "echo 'Docker 볼륨 영속성 테스트' > /data/persistent.txt && sleep 3600"
-44d4259f344bd6642ccfc13539d2b195a3eda871283297bb5feb57341d7cb748
+$ docker run -d --name codyssey-volume -v codyssey-data:/data ubuntu sleep infinity
+Unable to find image 'ubuntu:latest' locally
+latest: Pulling from library/ubuntu
+817807f3c64e: Pull complete 
+Digest: sha256:186072bba1b2f436cbb91ef2567abca677337cfc786c86e107d25b7072feef0c
+Status: Downloaded newer image for ubuntu:latest
+33c9464da86c9a9601853607c9492f3b811dd7cc2fd1c5a575576f068c521563
+
+$ docker exec -it codyssey-volume sh
+# echo "Docker 볼륨 영속성 테스트" > /data/test.txt
+# exit
 ```
 
 ### 컨테이너 삭제
 ```bash
-$ docker stop codyssey-volume && docker rm codyssey-volume
+$ docker stop codyssey-volume
 codyssey-volume
+
+$ docker rm codyssey-volume
 codyssey-volume
 ```
 
@@ -586,26 +601,11 @@ CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 
 ### 새 컨테이너 데이터 유지 확인
 ```bash
-$ docker run --rm -v  codyssey-data:/data ubuntu cat /data/persistent.txt
+$ docker run -d --name codyssey-volume-new -v codyssey-data:/data ubuntu sleep infinity
+$ docker exec -it codyssey-volume-new sh
+# cat /data/test.txt
 Docker 볼륨 영속성 테스트
-↑ 컨테이너를 삭제했지만 데이터가 그대로 남아있음
-```
-
-### 볼륨 상세 확인
-
-```bash
-$ docker volume inspect codyssey-data
-[
-    {
-        "CreatedAt": "2026-04-04T21:18:35+09:00",
-        "Driver": "local",
-        "Labels": null,
-        "Mountpoint": "/var/lib/docker/volumes/codyssey-data/_data",
-        "Name": "codyssey-data",
-        "Options": null,
-        "Scope": "local"
-    }
-]
+# exit
 ```
 
 ## 12. Git 설정 및 GitHub 연동
@@ -613,8 +613,8 @@ $ docker volume inspect codyssey-data
 ### 기본 브랜치 확인
 
 ```bash
-$ git branch --show-current
-main
+$ git branch
+* main
 ```
 
 ### Git 설정 확인
@@ -658,16 +658,15 @@ juicep0421@gmail.com
 
 ## 13. 트러블슈팅
 
-### 1. Docker 소켓 접근 권한 문제
+### 1. 볼륨 영속성 확인 실습 시 ubuntu 이미지로 생성한 컨테이너가 계속 종료됨
+- 문제 상황: 볼륨 영속성 확인 실습에서 `ubuntu` 이미지로 생성한 컨테이너가 계속 종료되었다.
+- 원인 분석: `ubuntu` 이미지는 기본적으로 계속 실행되는 프로세스가 없어서, 실행할 작업이 끝나면 컨테이너도 바로 종료된다.
+- 해결 방법: 컨테이너 실행 시 `sleep` 같은 대기 명령을 함께 사용해 컨테이너가 바로 종료되지 않도록 했다.
+- 재발 방지 포인트: 실습용 컨테이너를 유지해야 할 때는 실행 후 바로 끝나는 구조인지 먼저 확인하고, 필요하면 `sleep` 같은 명령을 함께 사용한다.
 
-- 문제 상황: 샌드박스 환경에서 `docker images`, `docker ps -a`, `docker volume ls` 실행 시 Docker daemon socket 접근이 거부되었다.
-- 원인 분석: OrbStack Docker 소켓(`/Users/pwndud04218647/.orbstack/run/docker.sock`)에 대한 접근 권한이 샌드박스에서 제한되어 있었다.
-- 해결 방법: 권한 상승 후 동일 명령을 다시 실행해 실제 Docker 상태를 확인했다.
-- 재발 방지 포인트: Docker 관련 실습은 로컬 파일 읽기와 달리 daemon socket 접근이 필요하므로, 제한된 실행 환경에서는 권한 이슈를 먼저 점검한다.
+### 2. git config를 확인하려고 했는데 설정이 안 되어 있었음
+- 문제 상황: `git config`를 확인했는데 `user.name`, `user.email` 같은 사용자 정보가 설정되어 있지 않았다.
+- 원인 분석: Git은 설치만으로 사용자 정보가 자동 설정되지 않기 때문에 처음에 직접 등록해야 한다.
+- 해결 방법: `git config --global user.name "사용자이름"`과 `git config --global user.email "이메일"` 명령으로 전역 설정을 추가했다.
+- 재발 방지 포인트: Git 작업을 시작하기 전에 `git config --list`로 기본 설정이 되어 있는지 먼저 확인한다.
 
-### 2. 로컬 포트 `curl` 검증 실패
-
-- 문제 상황: `curl -s http://127.0.0.1:8080`, `curl -s http://127.0.0.1:8081` 명령이 종료 코드 7로 실패했다.
-- 원인 분석: 컨테이너는 정상적으로 실행 중이었지만, 현재 실행 환경에서는 로컬 포트 접속이 제한되어 직접 HTTP 요청 검증이 되지 않았다.
-- 해결 방법: `docker ps`로 포트 매핑 상태를 확인하고, `docker exec`로 컨테이너 내부의 배포 파일을 직접 확인해 서비스 내용을 검증했다.
-- 재발 방지 포인트: 포트 접속 검증이 제한된 환경에서는 `docker ps`, `docker exec`, 컨테이너 로그를 함께 사용해 우회 검증 절차를 준비한다.
