@@ -134,6 +134,7 @@ git version 2.53.0
 
 ### Git / GitHub
 | 상태 | 항목 | 명령어 |
+|------|------|--------|
 | [x] | git config --list 결과 기록 | `git config --list` |
 | [x] | GitHub 저장소 연동 확인 | `git remote -v` |
 
